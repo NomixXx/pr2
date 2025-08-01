@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Login - UpTaxi Portal</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 300px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        .debug-panel h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .debug-log {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        .test-buttons {
+            margin: 10px 0;
+        }
+        .test-buttons button {
+            margin: 2px;
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h4>🔧 Debug Panel</h4>
+        <div class="test-buttons">
+            <button onclick="testAPI()">Test API</button>
+            <button onclick="testDB()">Test DB</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        <div class="debug-log" id="debugLog">
+            Initializing debug mode...<br>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="login-form">
+            <div class="logo">
+                <img src="public/logo-uptaxi.svg" alt="UpTaxi Logo">
+            </div>
+            <h2>Debug Login</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="Логин" value="admin" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" placeholder="Пароль" value="admin123" required>
+                </div>
+                <button type="submit">Войти</button>
+                <div class="remember-me">
+                    <input type="checkbox" id="remember">
+                    <label for="remember">Запомнить меня</label>
+                </div>
+                <div id="error-message" class="error-message"></div>
+            </form>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #e9ecef; border-radius: 8px;">
+                <h4>Тестовые аккаунты:</h4>
+                <p><strong>Админ:</strong> admin / admin123</p>
+                <p><strong>Пользователь:</strong> user / user123</p>
+                <button onclick="fillAdmin()" style="margin: 5px;">Заполнить Админ</button>
+                <button onclick="fillUser()" style="margin: 5px;">Заполнить User</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Debug функции
+        function log(message) {
+            const debugLog = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.innerHTML += `[${timestamp}] ${message}<br>`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('debugLog').innerHTML = '';
+        }
+
+        function fillAdmin() {
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'admin123';
+            log('Filled admin credentials');
+        }
+
+        function fillUser() {
+            document.getElementById('username').value = 'user';
+            document.getElementById('password').value = 'user123';
+            log('Filled user credentials');
+        }
+
+        async function testAPI() {
+            log('Testing API connection...');
+            try {
+                const response = await fetch('/api/test-auth.php');
+                const data = await response.json();
+                log('API Response: ' + JSON.stringify(data));
+            } catch (error) {
+                log('API Error: ' + error.message);
+            }
+        }
+
+        async function testDB() {
+            log('Testing database connection...');
+            try {
+                const response = await fetch('/api/simple-auth.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'test', password: 'test' })
+                });
+                const data = await response.json();
+                log('DB Test Response: ' + JSON.stringify(data));
+            } catch (error) {
+                log('DB Error: ' + error.message);
+            }
+        }
+
+        // Инициализация
+        log('Debug login page loaded');
+        log('Current URL: ' + window.location.href);
+    </script>
+    
+    <script src="js/debug-auth.js"></script>
+</body>
+</html>

@@ -1,1157 +1,624 @@
-// Система управления разделами (импорт из админ-панели)
-class SectionManager {
-    constructor() {
-        this.sections = JSON.parse(localStorage.getItem('uptaxi_sections')) || [
-            { 
-                id: 'section1', 
-                name: 'Раздел 1', 
-                icon: '📁',
-                accessLevel: 1,
-                subsections: [
-                    { id: 'subsection1', name: 'Подраздел 1', accessLevel: 1 },
-                    { id: 'subsection2', name: 'Подраздел 2', accessLevel: 2 },
-                    { id: 'subsection3', name: 'Подраздел 3', accessLevel: 3 }
-                ]
-            },
-            { 
-                id: 'section2', 
-                name: 'Раздел 2', 
-                icon: '📂',
-                accessLevel: 2,
-                subsections: [
-                    { id: 'subsection1', name: 'Подраздел 1', accessLevel: 2 },
-                    { id: 'subsection2', name: 'Подраздел 2', accessLevel: 2 },
-                    { id: 'subsection3', name: 'Подраздел 3', accessLevel: 3 }
-                ]
-            },
-            { 
-                id: 'section3', 
-                name: 'Раздел 3', 
-                icon: '📋',
-                accessLevel: 3,
-                subsections: [
-                    { id: 'subsection1', name: 'Подраздел 1', accessLevel: 3 },
-                    { id: 'subsection2', name: 'Подраздел 2', accessLevel: 3 },
-                    { id: 'subsection3', name: 'Подраздел 3', accessLevel: 3 }
-                ]
-            }
-        ];
+// Система управления меню пользователя
+const apiClient = {
+  getSections: async () => {
+    // Пример реализации
+    return [
+      {
+        id: 1,
+        name: "Раздел 1",
+        icon: "🏠",
+        accessLevel: 1,
+        subsections: [{ id: 11, name: "Подраздел 1.1", accessLevel: 1 }],
+      },
+      {
+        id: 2,
+        name: "Раздел 2",
+        icon: "🔧",
+        accessLevel: 2,
+        subsections: [{ id: 21, name: "Подраздел 2.1", accessLevel: 2 }],
+      },
+    ]
+  },
+  getActivities: async () => {
+    // Пример реализации
+    return [
+      { id: 1, title: "Активность 1", icon: "📅", date: "2023-10-01" },
+      { id: 2, title: "Активность 2", icon: "📅", date: "2023-09-30" },
+    ]
+  },
+  getContent: async (sectionId, subsectionId) => {
+    // Пример реализации
+    return {
+      content: [{ id: 1, title: "Контент 1", description: "Описание контента 1", createdAt: "2023-10-01" }],
+      googleDocs: [
+        {
+          id: 1,
+          url: "https://docs.google.com/document/d/1A2B3C4D5E6F7G8H9I0J1K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7",
+          title: "Документ 1",
+          sectionId: sectionId,
+          subsectionId: subsectionId,
+          createdAt: "2023-10-01",
+        },
+      ],
+      files: [
+        {
+          id: 1,
+          url: "https://example.com/file.pdf",
+          name: "Файл 1",
+          type: "application/pdf",
+          size: 1024,
+          sectionId: sectionId,
+          subsectionId: subsectionId,
+          createdAt: "2023-10-01",
+        },
+      ],
     }
-
-    getSections() {
-        return this.sections;
-    }
-
-    getSectionsForUser(userAccessLevel) {
-        return this.sections.filter(section => section.accessLevel <= userAccessLevel);
-    }
+  },
 }
 
-// Глобальный экземпляр менеджера разделов
-const sectionManager = new SectionManager();
-
-// Система управления контентом
-class ContentManager {
-    constructor() {
-        this.content = JSON.parse(localStorage.getItem('uptaxi_content')) || {};
-        this.googleDocs = JSON.parse(localStorage.getItem('uptaxi_googleDocs')) || [];
-        this.files = JSON.parse(localStorage.getItem('uptaxi_files')) || [];
-        this.activities = JSON.parse(localStorage.getItem('uptaxi_activities')) || [
-            {
-                id: 1,
-                title: 'Добро пожаловать в систему',
-                icon: '🎉',
-                date: new Date().toLocaleDateString('ru-RU'),
-                createdAt: new Date().toLocaleDateString('ru-RU')
-            }
-        ];
-    }
-
-    saveContent() {
-        localStorage.setItem('uptaxi_content', JSON.stringify(this.content));
-        localStorage.setItem('uptaxi_googleDocs', JSON.stringify(this.googleDocs));
-        localStorage.setItem('uptaxi_files', JSON.stringify(this.files));
-        localStorage.setItem('uptaxi_activities', JSON.stringify(this.activities));
-        
-        // Сохранение на сервер если доступен
-        if (typeof ServerUtils !== 'undefined' && serverAvailable) {
-            ServerUtils.saveData('uptaxi_content', this.content);
-            ServerUtils.saveData('uptaxi_googleDocs', this.googleDocs);
-            ServerUtils.saveData('uptaxi_files', this.files);
-            ServerUtils.saveData('uptaxi_activities', this.activities);
-        }
-    }
-
-    addContent(section, subsection, title, description) {
-        const key = `${section}_${subsection}`;
-        if (!this.content[key]) this.content[key] = [];
-        
-        this.content[key].push({
-            id: Date.now(),
-            title,
-            description,
-            createdAt: new Date().toLocaleDateString()
-        });
-        this.saveContent();
-    }
-
-    addGoogleDoc(title, url, sectionId, subsectionId) {
-        this.googleDocs.push({
-            id: Date.now(),
-            title,
-            url,
-            sectionId,
-            subsectionId,
-            createdAt: new Date().toLocaleDateString()
-        });
-        this.saveContent();
-    }
-
-    addFile(name, url, sectionId, subsectionId, type) {
-        this.files.push({
-            id: Date.now(),
-            name,
-            url,
-            sectionId,
-            subsectionId,
-            type,
-            createdAt: new Date().toLocaleDateString()
-        });
-        this.saveContent();
-    }
-
-    addActivity(title, icon) {
-        this.activities.push({
-            id: Date.now(),
-            title,
-            icon,
-            date: new Date().toLocaleDateString('ru-RU'),
-            createdAt: new Date().toLocaleDateString('ru-RU')
-        });
-        this.saveContent();
-    }
-
-    getActivities() {
-        return this.activities.slice(-5).reverse(); // Последние 5 активностей
-    }
-
-    getContent(section, subsection) {
-        const key = `${section}_${subsection}`;
-        return this.content[key] || [];
-    }
-
-    getGoogleDocs(sectionId, subsectionId) {
-        return this.googleDocs.filter(doc => 
-            doc.sectionId === sectionId && doc.subsectionId === subsectionId
-        );
-    }
-
-    getFiles(sectionId, subsectionId) {
-        return this.files.filter(file => 
-            file.sectionId === sectionId && file.subsectionId === subsectionId
-        );
-    }
+const auth = {
+  isLoggedIn: () => true,
+  getCurrentUser: () => ({ username: "JohnDoe", role: "user", accessLevel: 1 }),
 }
 
-// Глобальный экземпляр менеджера контента
-const contentManager = new ContentManager();
+class MenuManager {
+  constructor() {
+    this.sections = []
+    this.content = {}
+    this.googleDocs = []
+    this.files = []
+    this.activities = []
+    this.currentUser = null
 
-// Проверка авторизации при загрузке страницы
-function checkAuth() {
-    if (!auth.isLoggedIn()) {
-        window.location.href = 'index.html';
-        return false;
+    // Загрузить данные
+    this.loadData()
+  }
+
+  async loadData() {
+    try {
+      // Загрузить разделы с сервера
+      this.sections = await apiClient.getSections()
+
+      // Загрузить активности
+      this.activities = await apiClient.getActivities()
+
+      console.log("Данные меню загружены с сервера:", {
+        sections: this.sections.length,
+        activities: this.activities.length,
+      })
+
+      // Обновить интерфейс
+      this.renderMenu()
+      this.renderActivities()
+      this.loadAllContent()
+    } catch (error) {
+      console.error("Ошибка загрузки данных меню:", error)
+      // Fallback на localStorage
+      this.loadFromLocalStorage()
     }
-    return true;
-}
+  }
 
-// Функция загрузки динамических разделов
-function loadDynamicSections() {
-    const user = auth.currentUser;
-    if (!user) return;
+  loadFromLocalStorage() {
+    this.sections = JSON.parse(localStorage.getItem("uptaxi_sections")) || []
+    this.content = JSON.parse(localStorage.getItem("uptaxi_content")) || {}
+    this.googleDocs = JSON.parse(localStorage.getItem("uptaxi_googleDocs")) || []
+    this.files = JSON.parse(localStorage.getItem("uptaxi_files")) || []
+    this.activities = JSON.parse(localStorage.getItem("uptaxi_activities")) || []
 
-    // Перезагрузить разделы из localStorage
-    sectionManager.sections = JSON.parse(localStorage.getItem('uptaxi_sections')) || sectionManager.sections;
-    
-    console.log('Текущий пользователь:', user);
-    console.log('Доступные разделы:', sectionManager.sections);
-    
-    // Админы видят все разделы, обычные пользователи - только свой уровень
-    let availableSections;
-    if (user.role === 'admin') {
-        availableSections = sectionManager.sections; // Админы видят все
+    this.renderMenu()
+    this.renderActivities()
+    this.loadAllContent()
+  }
+
+  renderMenu() {
+    const menuNav = document.getElementById("menuNav")
+    if (!menuNav) return
+
+    let html = ""
+
+    // Фильтровать разделы по уровню доступа пользователя
+    const userAccessLevel = this.currentUser ? this.currentUser.accessLevel : 1
+    const isAdmin = this.currentUser && this.currentUser.role === "admin"
+
+    const accessibleSections = this.sections.filter((section) => {
+      return isAdmin || section.accessLevel <= userAccessLevel
+    })
+
+    if (accessibleSections.length === 0) {
+      html =
+        '<div class="menu-section"><p style="padding: 20px; text-align: center; color: rgba(255,255,255,0.7);">Нет доступных разделов</p></div>'
     } else {
-        const userAccessLevel = user.accessLevel || 1;
-        console.log('Уровень доступа пользователя:', userAccessLevel);
-        availableSections = sectionManager.sections.filter(section => {
-            console.log(`Раздел ${section.name}: уровень ${section.accessLevel}, пользователь: ${userAccessLevel}`);
-            return section.accessLevel === userAccessLevel;
-        });
-    }
-    
-    console.log('Доступные разделы для пользователя:', availableSections);
-    
-    const dynamicSectionsContainer = document.getElementById('dynamic-sections');
-    const quickLinksContainer = document.getElementById('quick-links');
-    
-    if (!dynamicSectionsContainer || !quickLinksContainer) return;
-    
-    let sectionsHtml = '';
-    let quickLinksHtml = '';
-    
-    availableSections.forEach(section => {
+      accessibleSections.forEach((section) => {
         // Фильтровать подразделы по уровню доступа
-        let availableSubsections;
-        if (user.role === 'admin') {
-            availableSubsections = section.subsections; // Админы видят все подразделы
-        } else {
-            const userAccessLevel = user.accessLevel || 1;
-            availableSubsections = section.subsections.filter(sub => sub.accessLevel === userAccessLevel);
-        }
-        
-        if (availableSubsections.length > 0) {
-            sectionsHtml += `
-                <li class="nav-item">
-                    <a href="#" class="section-toggle" onclick="toggleSubmenu(this); return false;">
-                        <span class="icon">${section.icon}</span>
-                        <span>${section.name}</span>
-                        <span class="arrow">▼</span>
-                    </a>
-                    <ul class="subsection-menu">
-            `;
-            
-            availableSubsections.forEach(subsection => {
-                sectionsHtml += `
-                    <li><a href="#" onclick="showContent('${section.id}', '${subsection.id}'); return false;">${subsection.name}</a></li>
-                `;
-            });
-            
-            sectionsHtml += `
-                    </ul>
-                </li>
-            `;
-            
-            // Добавить первый подраздел в быстрые ссылки
-            if (availableSubsections.length > 0) {
-                quickLinksHtml += `
-                    <a href="#" onclick="showContent('${section.id}', '${availableSubsections[0].id}'); return false;" class="quick-link">
-                        <span class="icon">${section.icon}</span>
-                        <span>${section.name} - ${availableSubsections[0].name}</span>
-                    </a>
-                `;
-            }
-        }
-    });
-    
-    if (sectionsHtml === '') {
-        sectionsHtml = '<li><p style="padding: 15px; color: rgba(255,255,255,0.7);">Нет доступных разделов</p></li>';
-    }
-    
-    if (quickLinksHtml === '') {
-        quickLinksHtml = '<p>Нет доступных разделов</p>';
-    }
-    
-    dynamicSectionsContainer.innerHTML = sectionsHtml;
-    quickLinksContainer.innerHTML = quickLinksHtml;
-}
+        const accessibleSubsections = section.subsections.filter((subsection) => {
+          return isAdmin || subsection.accessLevel <= userAccessLevel
+        })
 
-// Функция переключения подменю
-function toggleSubmenu(element) {
-    if (event) event.preventDefault();
-    const menuItem = element.parentElement;
-    const isActive = menuItem.classList.contains('active');
-    
-    // Закрыть все подменю
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Открыть текущее, если оно не было активным
-    if (!isActive) {
-        menuItem.classList.add('active');
-    }
-}
+        if (accessibleSubsections.length > 0) {
+          html += `
+            <div class="menu-section">
+              <div class="menu-item" onclick="toggleSubmenu('${section.id}')">
+                <a href="#">
+                  <i class="menu-icon">${section.icon}</i>
+                  ${section.name}
+                  <i class="fas fa-chevron-down" style="margin-left: auto; transition: transform 0.3s;"></i>
+                </a>
+              </div>
+              <div class="submenu" id="submenu-${section.id}">
+          `
 
-// Функция показа дашборда
-function showDashboard() {
-    // Убрать активный класс со всех пунктов меню
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Активировать дашборд
-    document.querySelector('.nav-item').classList.add('active');
-    
-    // Показать дашборд
-    document.getElementById('dashboard').style.display = 'block';
-    
-    // Скрыть контейнер для контента
-    const dynamicContent = document.getElementById('dynamic-content');
-    if (dynamicContent) {
-        dynamicContent.style.display = 'none';
-    }
-    
-    // Обновить хлебные крошки
-    const breadcrumb = document.getElementById('breadcrumb');
-    if (breadcrumb) {
-        breadcrumb.innerHTML = '<span>Главная</span>';
-    }
-}
+          accessibleSubsections.forEach((subsection) => {
+            html += `
+              <div class="submenu-item" onclick="showContent('${section.id}', '${subsection.id}', '${section.name}', '${subsection.name}')">
+                <a href="#">${subsection.name}</a>
+              </div>
+            `
+          })
 
-// Функция переключения на контент
-function switchToContent() {
-    // Скрыть дашборд
-    document.getElementById('dashboard').style.display = 'none';
-    
-    // Показать контейнер для контента
-    const dynamicContent = document.getElementById('dynamic-content');
-    if (dynamicContent) {
-        dynamicContent.style.display = 'block';
-    }
-}
-
-// Функция отображения контента
-function showContent(sectionId, subsectionId) {
-    if (event) event.preventDefault();
-    
-    const user = auth.currentUser;
-    const sectionData = sectionManager.sections.find(s => s.id === sectionId);
-    const subsectionData = sectionData?.subsections.find(sub => sub.id === subsectionId);
-    
-    if (!sectionData || !subsectionData) {
-        alert('Раздел не найден');
-        return;
-    }
-    
-    // Проверить доступ пользователя к разделу
-    if (user.role !== 'admin') {
-        const userAccessLevel = user.accessLevel || 1;
-        if (userAccessLevel !== subsectionData.accessLevel) {
-            alert('У вас нет доступа к этому разделу');
-            return;
-        }
-    }
-    
-    // Переключиться на контент
-    switchToContent();
-    
-    const contentArea = document.getElementById('dynamic-content');
-    if (!contentArea) return;
-    
-    // Убрать активный класс со всех пунктов меню
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    // Обновить хлебные крошки
-    const breadcrumb = document.getElementById('breadcrumb');
-    if (breadcrumb) {
-        breadcrumb.innerHTML = `<span>Главная</span><span class="separator">></span><span>${sectionData.name} - ${subsectionData.name}</span>`;
-    }
-    
-    let html = `
-        <div class="section-header">
-            <h1>${sectionData.name} - ${subsectionData.name}</h1>
-            <p>Информация и документы раздела</p>
-            <div class="section-actions" style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                <button onclick="showDashboard()" class="btn-primary">
-                    <span class="icon">🏠</span>
-                    Главная
-                ${auth.isAdmin() || user.role === 'admin' ? `
-                    <button onclick="openAddContentModal('${sectionId}', '${subsectionId}')" class="btn-primary">
-                        <span class="icon">📝</span>
-                        Добавить информацию
-                    </button>
-                    <button onclick="openAddDocModal('${sectionId}', '${subsectionId}')" class="btn-primary">
-                        <span class="icon">📄</span>
-                        Добавить документ
-                    </button>
-                    <button onclick="openUploadFileModal('${sectionId}', '${subsectionId}')" class="btn-primary">
-                        <span class="icon">📁</span>
-                        Загрузить файлы
-                    </button>
-                ` : ''}
+          html += `
+              </div>
             </div>
+          `
+        }
+      })
+    }
+
+    menuNav.innerHTML = html
+  }
+
+  renderActivities() {
+    const activitiesList = document.getElementById("activitiesList")
+    if (!activitiesList) return
+
+    if (this.activities.length === 0) {
+      activitiesList.innerHTML = '<p style="text-align: center; color: #64748b;">Нет активностей</p>'
+      return
+    }
+
+    let html = ""
+    // Показать последние 5 активностей
+    const recentActivities = this.activities.slice(-5).reverse()
+
+    recentActivities.forEach((activity) => {
+      html += `
+        <div class="activity-item">
+          <div class="activity-icon">${activity.icon}</div>
+          <div class="activity-content">
+            <div class="activity-title">${activity.title}</div>
+            <div class="activity-date">${activity.date}</div>
+          </div>
         </div>
-    `;
-    
-    // Получить контент
-    const content = contentManager.getContent(sectionId, subsectionId);
-    const googleDocs = contentManager.getGoogleDocs(sectionId, subsectionId);
-    const files = contentManager.getFiles(sectionId, subsectionId);
-    
-    const totalItems = content.length + googleDocs.length + files.length;
-    
-    if (totalItems === 0) {
+      `
+    })
+
+    activitiesList.innerHTML = html
+  }
+
+  async loadAllContent() {
+    const contentSections = document.getElementById("contentSections")
+    if (!contentSections) return
+
+    let html = ""
+
+    // Создать разделы для каждой комбинации раздел-подраздел
+    for (const section of this.sections) {
+      for (const subsection of section.subsections) {
+        // Проверить доступ
+        const userAccessLevel = this.currentUser ? this.currentUser.accessLevel : 1
+        const isAdmin = this.currentUser && this.currentUser.role === "admin"
+
+        if (!isAdmin && (section.accessLevel > userAccessLevel || subsection.accessLevel > userAccessLevel)) {
+          continue
+        }
+
+        const sectionId = `${section.id}_${subsection.id}`
+
         html += `
-            <div class="empty-state">
-                <div class="empty-icon">📁</div>
-                <h3>Раздел пуст</h3>
-                <p>В этом разделе пока нет информации. Обратитесь к администратору для добавления материалов.</p>
+          <div id="content-${sectionId}" class="content-section">
+            <div class="page-header">
+              <h2 class="page-title">${section.icon} ${section.name} - ${subsection.name}</h2>
+              <p class="page-subtitle">Контент раздела ${subsection.name}</p>
             </div>
-        `;
-    } else {
-        html += '<div class="content-grid">';
-        
-        // Отобразить текстовый контент
-        content.forEach(item => {
-            const isLongContent = item.description.length > 200;
-            const contentId = `content-${item.id}`;
-            const savedWidth = localStorage.getItem(`content-width-${item.id}`) || '';
-            const widthStyle = savedWidth ? `style="width: ${savedWidth}px;"` : '';
-            const adminResizable = (auth.isAdmin() || user.role === 'admin') ? 'admin-resizable' : '';
-            
-            html += `
-                <div class="content-card ${adminResizable}" ${widthStyle} data-content-id="${item.id}">
-                    <div class="card-header">
-                        <h3>${item.title}</h3>
-                        <span class="date">${item.createdAt}</span>
-                    </div>
-                    <div class="card-content">
-                        <div class="content-text ${isLongContent ? 'collapsed' : ''}" id="${contentId}">
-                            ${item.description.replace(/\n/g, '<br>')}
-                        </div>
-                        ${isLongContent ? `
-                            <button class="expand-btn" onclick="toggleContent('${contentId}', this)">
-                                Читать далее
-                            </button>
-                        ` : ''}
-                        ${auth.isAdmin() || user.role === 'admin' ? `
-                            <div style="display: flex; gap: 100px; margin-top: 10px;">
-                                <button onclick="editContentFromMenu('${sectionId}_${subsectionId}', ${item.id})" class="btn-edit" style="margin-top: 10px; padding: 5px 10px; font-size: 12px;">
-                                    Редактировать
-                                </button>
-                            <button onclick="deleteContentFromMenu('${sectionId}_${subsectionId}', ${item.id})" class="btn-danger" style="margin-top: 10px; padding: 5px 10px; font-size: 12px;">
-                                Удалить
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        });
-        
-        // Отобразить Google документы
-        googleDocs.forEach(doc => {
-            html += `
-                <div class="content-card">
-                    <div class="card-header">
-                        <h3>📄 ${doc.title}</h3>
-                        <span class="date">${doc.createdAt}</span>
-                    </div>
-                    <div class="card-content">
-                        <p>Google документ</p>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <button onclick="openGoogleDocEmbed('${doc.url}', '${doc.title}')" class="doc-embed-link">
-                                <span class="icon">👁️</span>
-                                Просмотр
-                            </button>
-                            <a href="${doc.url}" target="_blank" class="doc-link">
-                                <span class="icon">🔗</span>
-                                Открыть в Google
-                            </a>
-                        </div>
-                        ${auth.isAdmin() || user.role === 'admin' ? `
-                            <button onclick="deleteDocFromMenu(${doc.id})" class="btn-danger" style="margin-top: 10px; padding: 5px 10px; font-size: 12px;">
-                                Удалить
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        });
-        
-        // Отобразить файлы
-        files.forEach(file => {
-            if (file.type && file.type.startsWith('image/')) {
-                html += `
-                    <div class="photo-gallery-item" onclick="viewPhoto('${file.url}', '${file.name}')">
-                        <img src="${file.url}" alt="${file.name}">
-                        <div class="photo-info">
-                            <div class="photo-title">${file.name}</div>
-                        </div>
-                        ${auth.isAdmin() || user.role === 'admin' ? `
-                        ` : ''}
-                    </div>
-                `;
-            } else {
-                html += `
-                    <div class="content-card">
-                        <div class="card-header">
-                            <h3>📁 ${file.name}</h3>
-                            <span class="date">${file.createdAt}</span>
-                        </div>
-                        <div class="card-content">
-                            <p>Файл для скачивания</p>
-                            <a href="${file.url}" target="_blank" class="doc-link">Скачать файл</a>
-                            ${auth.isAdmin() || user.role === 'admin' ? `
-                                <button onclick="deleteFileFromMenu(${file.id})" class="btn-danger" style="margin-top: 10px; padding: 5px 10px; font-size: 12px;">
-                                    Удалить
-                                </button>
-                            </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                `;
-            }
-        });
-        
-        // Если есть изображения, обернуть их в галерею
-        const imageFiles = files.filter(file => file.type && file.type.startsWith('image/'));
-        if (imageFiles.length > 0) {
-            html = html.replace('<div class="content-grid">', '<div class="content-grid">');
-            // Добавить отдельную галерею для фото
-            let photoGalleryHtml = '<div class="photo-gallery">';
-            imageFiles.forEach(file => {
-                photoGalleryHtml += `
-                    <div class="photo-gallery-item" onclick="viewPhoto('${file.url}', '${file.name}')">
-                        <img src="${file.url}" alt="${file.name}">
-                        <div class="photo-info">
-                            <div class="photo-date">${file.createdAt}</div>
-                        </div>
-                        ${auth.isAdmin() || user.role === 'admin' ? `
-                            <button onclick="event.stopPropagation(); deleteFileFromMenu(${file.id})" class="btn-danger" style="position: absolute; top: 10px; right: 10px; padding: 5px 8px; font-size: 12px;">
-                                ✕
-                            </button>
-                        ` : ''}
-                    </div>
-                `;
-            });
-            photoGalleryHtml += '</div>';
-            
-            // Заменить отображение изображений в основной сетке на галерею
-            html = html.replace(/<div class="photo-gallery-item"[^>]*>.*?<\/div>/gs, '');
-            html += photoGalleryHtml;
+            <div class="content-grid" id="grid-${sectionId}">
+              <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
+                Загрузка контента...
+              </div>
+            </div>
+          </div>
+        `
+      }
+    }
+
+    contentSections.innerHTML = html
+
+    // Загрузить контент для каждого раздела
+    for (const section of this.sections) {
+      for (const subsection of section.subsections) {
+        const userAccessLevel = this.currentUser ? this.currentUser.accessLevel : 1
+        const isAdmin = this.currentUser && this.currentUser.role === "admin"
+
+        if (!isAdmin && (section.accessLevel > userAccessLevel || subsection.accessLevel > userAccessLevel)) {
+          continue
         }
-        
-        html += '</div>';
+
+        await this.loadSectionContent(section.id, subsection.id, section.name, subsection.name)
+      }
     }
-    
-    contentArea.innerHTML = html;
-    
-    // Добавить обработчики изменения размера для админов
-    if (auth.isAdmin() || user.role === 'admin') {
-        setupResizeHandlers();
+  }
+
+  async loadSectionContent(sectionId, subsectionId, sectionName, subsectionName) {
+    const gridId = `grid-${sectionId}_${subsectionId}`
+    const grid = document.getElementById(gridId)
+    if (!grid) return
+
+    try {
+      // Загрузить контент с сервера
+      const contentData = await apiClient.getContent(sectionId, subsectionId)
+
+      let html = ""
+      let hasContent = false
+
+      // Текстовый контент
+      if (contentData.content && contentData.content.length > 0) {
+        contentData.content.forEach((item) => {
+          hasContent = true
+          const isLongContent = item.description.length > 300
+          const contentId = `content-${item.id}`
+          const savedWidth = localStorage.getItem(`content-width-${item.id}`) || ""
+          const widthStyle = savedWidth ? `style="width: ${savedWidth}px;"` : ""
+
+          html += `
+            <div class="content-card resizable" ${widthStyle} data-content-id="${item.id}">
+              <h3>${item.title}</h3>
+              <div class="content-text ${isLongContent ? "collapsed" : ""}" id="${contentId}">
+                ${item.description.replace(/\n/g, "<br>")}
+              </div>
+              ${
+                isLongContent
+                  ? `
+                <button class="expand-btn" onclick="toggleContent('${contentId}', this)">
+                  Читать далее
+                </button>
+              `
+                  : ""
+              }
+              <div class="content-meta">
+                <span class="content-date">Создано: ${item.createdAt}</span>
+              </div>
+            </div>
+          `
+        })
+      }
+
+      // Google документы
+      if (contentData.googleDocs && contentData.googleDocs.length > 0) {
+        contentData.googleDocs.forEach((doc) => {
+          hasContent = true
+          html += `
+            <div class="content-card" onclick="openGoogleDocEmbed('${doc.url}', '${doc.title}')">
+              <div class="doc-icon">📄</div>
+              <h3>${doc.title}</h3>
+              <p>Google документ</p>
+              <div class="content-meta">
+                <span class="content-date">Создано: ${doc.createdAt}</span>
+                <div class="content-actions">
+                  <span class="btn-link">Открыть</span>
+                </div>
+              </div>
+            </div>
+          `
+        })
+      }
+
+      // Файлы
+      if (contentData.files && contentData.files.length > 0) {
+        contentData.files.forEach((file) => {
+          hasContent = true
+          const fileIcon = this.getFileIcon(file.type)
+          html += `
+            <div class="content-card">
+              <div class="file-icon">${fileIcon}</div>
+              <h3 class="file-name">${file.name}</h3>
+              <p class="file-size">${this.formatFileSize(file.size)}</p>
+              <div class="content-meta">
+                <span class="content-date">Загружено: ${file.createdAt}</span>
+                <div class="content-actions">
+                  <a href="${file.url}" target="_blank" class="btn-link">Скачать</a>
+                </div>
+              </div>
+            </div>
+          `
+        })
+      }
+
+      if (!hasContent) {
+        html = `
+          <div class="empty-content">
+            <h3>Контент не найден</h3>
+            <p>В этом разделе пока нет контента</p>
+          </div>
+        `
+      }
+
+      grid.innerHTML = html
+
+      // Настроить обработчики изменения размера
+      this.setupResizeHandlers()
+    } catch (error) {
+      console.error(`Ошибка загрузки контента для ${sectionId}_${subsectionId}:`, error)
+
+      // Fallback на localStorage
+      const key = `${sectionId}_${subsectionId}`
+      const localContent = this.content[key] || []
+      const localDocs = this.googleDocs.filter(
+        (doc) => doc.sectionId === sectionId && doc.subsectionId === subsectionId,
+      )
+      const localFiles = this.files.filter((file) => file.sectionId === sectionId && file.subsectionId === subsectionId)
+
+      let html = ""
+      let hasContent = false
+
+      // Локальный контент
+      localContent.forEach((item) => {
+        hasContent = true
+        const isLongContent = item.description.length > 300
+        const contentId = `content-${item.id}`
+
+        html += `
+          <div class="content-card">
+            <h3>${item.title}</h3>
+            <div class="content-text ${isLongContent ? "collapsed" : ""}" id="${contentId}">
+              ${item.description.replace(/\n/g, "<br>")}
+            </div>
+            ${
+              isLongContent
+                ? `
+              <button class="expand-btn" onclick="toggleContent('${contentId}', this)">
+                Читать далее
+              </button>
+            `
+                : ""
+            }
+            <div class="content-meta">
+              <span class="content-date">Создано: ${item.createdAt}</span>
+            </div>
+          </div>
+        `
+      })
+
+      // Локальные документы
+      localDocs.forEach((doc) => {
+        hasContent = true
+        html += `
+          <div class="content-card" onclick="openGoogleDocEmbed('${doc.url}', '${doc.title}')">
+            <div class="doc-icon">📄</div>
+            <h3>${doc.title}</h3>
+            <p>Google документ</p>
+            <div class="content-meta">
+              <span class="content-date">Создано: ${doc.createdAt}</span>
+              <div class="content-actions">
+                <span class="btn-link">Открыть</span>
+              </div>
+            </div>
+          </div>
+        `
+      })
+
+      // Локальные файлы
+      localFiles.forEach((file) => {
+        hasContent = true
+        const fileIcon = this.getFileIcon(file.type)
+        html += `
+          <div class="content-card">
+            <div class="file-icon">${fileIcon}</div>
+            <h3 class="file-name">${file.name}</h3>
+            <div class="content-meta">
+              <span class="content-date">Загружено: ${file.createdAt}</span>
+              <div class="content-actions">
+                <a href="${file.url}" target="_blank" class="btn-link">Скачать</a>
+              </div>
+            </div>
+          </div>
+        `
+      })
+
+      if (!hasContent) {
+        html = `
+          <div class="empty-content">
+            <h3>Контент не найден</h3>
+            <p>В этом разделе пока нет контента</p>
+          </div>
+        `
+      }
+
+      grid.innerHTML = html
+      this.setupResizeHandlers()
     }
+  }
+
+  setupResizeHandlers() {
+    const resizableCards = document.querySelectorAll(".content-card.resizable")
+
+    resizableCards.forEach((card) => {
+      const contentId = card.getAttribute("data-content-id")
+      if (!contentId) return
+
+      // Установить начальную ширину из localStorage
+      const savedWidth = localStorage.getItem(`content-width-${contentId}`)
+      if (savedWidth && savedWidth !== "null") {
+        card.style.width = savedWidth + "px"
+      }
+
+      // Создать ResizeObserver для отслеживания изменений размера
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const width = entry.contentRect.width
+          if (width > 350) {
+            localStorage.setItem(`content-width-${contentId}`, width)
+            console.log(`Сохранена ширина ${width}px для контента ${contentId}`)
+          }
+        }
+      })
+
+      resizeObserver.observe(card)
+      card._resizeObserver = resizeObserver
+    })
+  }
+
+  getFileIcon(fileType) {
+    if (!fileType) return "📄"
+
+    if (fileType.includes("image")) return "🖼️"
+    if (fileType.includes("video")) return "🎥"
+    if (fileType.includes("audio")) return "🎵"
+    if (fileType.includes("pdf")) return "📕"
+    if (fileType.includes("word") || fileType.includes("document")) return "📝"
+    if (fileType.includes("excel") || fileType.includes("spreadsheet")) return "📊"
+    if (fileType.includes("powerpoint") || fileType.includes("presentation")) return "📈"
+    if (fileType.includes("zip") || fileType.includes("rar")) return "🗜️"
+
+    return "📄"
+  }
+
+  formatFileSize(bytes) {
+    if (!bytes) return "Неизвестно"
+
+    const sizes = ["Bytes", "KB", "MB", "GB"]
+    if (bytes === 0) return "0 Bytes"
+
+    const i = Math.floor(Math.log(bytes) / Math.log(1024))
+    return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i]
+  }
 }
 
-// Функция настройки обработчиков изменения размера
-function setupResizeHandlers() {
-    const resizableCards = document.querySelectorAll('.content-card.admin-resizable');
-    
-    resizableCards.forEach(card => {
-        const contentId = card.getAttribute('data-content-id');
-        if (!contentId) return;
-        
-        // Установить начальную ширину из localStorage
-        const savedWidth = localStorage.getItem(`content-width-${contentId}`);
-        if (savedWidth && savedWidth !== 'null') {
-            card.style.width = savedWidth + 'px';
-        }
-        
-        // Создать ResizeObserver для отслеживания изменений размера
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const width = entry.contentRect.width;
-                if (width > 300) { // Сохранять только если ширина больше минимальной
-                    localStorage.setItem(`content-width-${contentId}`, width);
-                    console.log(`Сохранена ширина ${width}px для информации ${contentId}`);
-                    
-                    // Принудительно обновить layout сетки
-                    const grid = card.closest('.content-grid');
-                    if (grid) {
-                        grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, max-content))';
-                    }
-                }
-            }
-        });
-        
-        resizeObserver.observe(card);
-        
-        // Сохранить observer для последующей очистки
-        card._resizeObserver = resizeObserver;
-    });
+// Глобальный менеджер меню
+let menuManager
+
+// Глобальная переменная для хранения текущего URL документа
+let currentGoogleDocUrl = ""
+
+// Функции управления меню
+function toggleSubmenu(sectionId) {
+  const submenu = document.getElementById(`submenu-${sectionId}`)
+  const chevron = submenu.previousElementSibling.querySelector(".fa-chevron-down")
+
+  if (submenu.classList.contains("open")) {
+    submenu.classList.remove("open")
+    chevron.style.transform = "rotate(0deg)"
+  } else {
+    // Закрыть все другие подменю
+    document.querySelectorAll(".submenu.open").forEach((menu) => {
+      menu.classList.remove("open")
+      const otherChevron = menu.previousElementSibling.querySelector(".fa-chevron-down")
+      if (otherChevron) otherChevron.style.transform = "rotate(0deg)"
+    })
+
+    submenu.classList.add("open")
+    chevron.style.transform = "rotate(180deg)"
+  }
 }
 
-// Функции для работы с модальными окнами в меню
+function showContent(sectionId, subsectionId, sectionName, subsectionName) {
+  // Скрыть все разделы контента
+  document.querySelectorAll(".content-section").forEach((section) => {
+    section.classList.remove("active")
+  })
+
+  // Убрать активный класс со всех пунктов меню
+  document.querySelectorAll(".submenu-item").forEach((item) => {
+    item.classList.remove("active")
+  })
+
+  // Показать выбранный раздел
+  const targetSection = document.getElementById(`content-${sectionId}_${subsectionId}`)
+  if (targetSection) {
+    targetSection.classList.add("active")
+  }
+
+  // Активировать пункт меню
+  event.target.closest(".submenu-item").classList.add("active")
+}
+
+function toggleContent(contentId, button) {
+  const contentElement = document.getElementById(contentId)
+  const isCollapsed = contentElement.classList.contains("collapsed")
+
+  if (isCollapsed) {
+    contentElement.classList.remove("collapsed")
+    button.textContent = "Свернуть"
+  } else {
+    contentElement.classList.add("collapsed")
+    button.textContent = "Читать далее"
+  }
+}
+
+function openGoogleDocEmbed(url, title) {
+  // Преобразовать URL для встраивания
+  let embedUrl = url
+
+  if (url.includes("docs.google.com/document/d/")) {
+    const docId = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)
+    if (docId) {
+      embedUrl = `https://docs.google.com/document/d/${docId[1]}/preview`
+    }
+  } else if (url.includes("docs.google.com/spreadsheets/d/")) {
+    const docId = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+    if (docId) {
+      embedUrl = `https://docs.google.com/spreadsheets/d/${docId[1]}/preview`
+    }
+  } else if (url.includes("docs.google.com/presentation/d/")) {
+    const docId = url.match(/\/presentation\/d\/([a-zA-Z0-9-_]+)/)
+    if (docId) {
+      embedUrl = `https://docs.google.com/presentation/d/${docId[1]}/preview`
+    }
+  }
+
+  currentGoogleDocUrl = url
+  document.getElementById("googleDocTitle").textContent = title
+  document.getElementById("googleDocFrame").src = embedUrl
+  openModal("googleDocModal")
+}
+
+function openGoogleDocInNewTab() {
+  if (currentGoogleDocUrl) {
+    window.open(currentGoogleDocUrl, "_blank")
+  }
+}
+
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'flex';
-    }
+  const modal = document.getElementById(modalId)
+  if (modal) {
+    modal.classList.add("show")
+  }
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
-
-// Функции для открытия модальных окон с предустановленными значениями
-function openAddContentModal(sectionId, subsectionId) {
-    document.getElementById('contentSectionId').value = sectionId;
-    document.getElementById('contentSubsectionId').value = subsectionId;
-    openModal('addContentModal');
-}
-
-function openAddDocModal(sectionId, subsectionId) {
-    document.getElementById('docSectionId').value = sectionId;
-    document.getElementById('docSubsectionId').value = subsectionId;
-    openModal('addDocModal');
-}
-
-function openUploadFileModal(sectionId, subsectionId) {
-    document.getElementById('fileSectionId').value = sectionId;
-    document.getElementById('fileSubsectionId').value = subsectionId;
-    openModal('uploadFileModal');
-}
-
-function openUploadPhotoModal(sectionId, subsectionId) {
-    document.getElementById('photoSectionId').value = sectionId;
-    document.getElementById('photoSubsectionId').value = subsectionId;
-    openModal('uploadPhotoModal');
-}
-
-// Функция редактирования контента из меню
-function editContentFromMenu(key, id) {
-    if (!auth.isAdmin() && auth.currentUser.role !== 'admin') return;
-    
-    const content = contentManager.content[key];
-    if (!content) return;
-    
-    const item = content.find(c => c.id === id);
-    if (!item) return;
-    
-    // Заполнить форму данными для редактирования
-    document.getElementById('editContentKey').value = key;
-    document.getElementById('editContentId').value = id;
-    document.getElementById('editContentTitle').value = item.title;
-    document.getElementById('editContentDescription').value = item.description;
-    
-    openModal('editContentModal');
-}
-
-// Функция обновления контента
-function updateContentFromMenu(key, id, title, description) {
-    if (!contentManager.content[key]) return false;
-    
-    const itemIndex = contentManager.content[key].findIndex(item => item.id === id);
-    if (itemIndex === -1) return false;
-    
-    contentManager.content[key][itemIndex].title = title;
-    contentManager.content[key][itemIndex].description = description;
-    contentManager.saveContent();
-    
-    // Добавить активность
-    contentManager.addActivity(`Обновлена информация: ${title}`, '✏️');
-    
-    return true;
-}
-
-// Функции удаления контента из меню
-function deleteContentFromMenu(key, id) {
-    if (!auth.isAdmin() && auth.currentUser.role !== 'admin') return;
-    
-    if (confirm('Вы уверены, что хотите удалить эту информацию?')) {
-        let content = JSON.parse(localStorage.getItem('uptaxi_content')) || {};
-        if (content[key]) {
-            content[key] = content[key].filter(item => item.id !== id);
-            localStorage.setItem('uptaxi_content', JSON.stringify(content));
-            contentManager.content = content;
-            
-            // Найти текущий раздел и подраздел
-            const parts = key.split('_');
-            if (parts.length === 2) {
-                showContent(parts[0], parts[1]);
-            }
-        }
-    }
-}
-
-function deleteDocFromMenu(id) {
-    if (!auth.isAdmin() && auth.currentUser.role !== 'admin') return;
-    
-    if (confirm('Вы уверены, что хотите удалить этот документ?')) {
-        let googleDocs = JSON.parse(localStorage.getItem('uptaxi_googleDocs')) || [];
-        const doc = googleDocs.find(d => d.id === id);
-        googleDocs = googleDocs.filter(doc => doc.id !== id);
-        localStorage.setItem('uptaxi_googleDocs', JSON.stringify(googleDocs));
-        contentManager.googleDocs = googleDocs;
-        
-        // Перезагрузить текущий раздел
-        if (doc) {
-            showContent(doc.sectionId, doc.subsectionId);
-        }
-    }
-}
-
-function deleteFileFromMenu(id) {
-    if (!auth.isAdmin() && auth.currentUser.role !== 'admin') return;
-    
-    if (confirm('Вы уверены, что хотите удалить этот файл?')) {
-        let files = JSON.parse(localStorage.getItem('uptaxi_files')) || [];
-        const file = files.find(f => f.id === id);
-        files = files.filter(file => file.id !== id);
-        localStorage.setItem('uptaxi_files', JSON.stringify(files));
-        contentManager.files = files;
-        
-        // Перезагрузить текущий раздел
-        if (file) {
-            showContent(file.sectionId, file.subsectionId);
-        }
-    }
-}
-
-// Функция загрузки файлов из меню
-async function uploadFiles() {
-    const fileInput = document.getElementById('fileUpload');
-    const files = fileInput.files;
-    const sectionId = document.getElementById('fileSectionId').value;
-    const subsectionId = document.getElementById('fileSubsectionId').value;
-    
-    if (files.length === 0) {
-        alert('Выберите файлы для загрузки');
-        return;
-    }
-    
-    if (!sectionId || !subsectionId) {
-        alert('Ошибка: не указан раздел или подраздел');
-        return;
-    }
-    
-    // Загрузка файлов на сервер или локально
-    for (const file of files) {
-        let fileData;
-        
-        if (typeof ServerUtils !== 'undefined' && serverAvailable) {
-            try {
-                fileData = await ServerUtils.uploadFile(file, sectionId, subsectionId);
-            } catch (error) {
-                console.error('Ошибка загрузки на сервер:', error);
-                fileData = {
-                    url: URL.createObjectURL(file),
-                    filename: file.name,
-                    size: file.size,
-                    type: file.type
-                };
-            }
-        } else {
-            fileData = {
-                url: URL.createObjectURL(file),
-                filename: file.name,
-                size: file.size,
-                type: file.type
-            };
-        }
-        
-        contentManager.addFile(fileData.filename, fileData.url, sectionId, subsectionId, file.type);
-    }
-    
-    // Добавить активность
-    contentManager.addActivity(`Загружено файлов: ${files.length}`, '📁');
-    
-    closeModal('uploadFileModal');
-    fileInput.value = '';
-    alert('Файлы успешно загружены');
-    
-    // Перезагрузить текущий раздел
-    showContent(sectionId, subsectionId);
-}
-
-// Функция загрузки фотографий
-async function uploadPhotos() {
-    const photoInput = document.getElementById('photoUpload');
-    const photos = photoInput.files;
-    const sectionId = document.getElementById('photoSectionId').value;
-    const subsectionId = document.getElementById('photoSubsectionId').value;
-    
-    if (photos.length === 0) {
-        alert('Выберите фотографии для загрузки');
-        return;
-    }
-    
-    if (!sectionId || !subsectionId) {
-        alert('Ошибка: не указан раздел или подраздел');
-        return;
-    }
-    
-    // Загрузка фотографий на сервер или локально
-    for (const photo of photos) {
-        if (photo.type.startsWith('image/')) {
-            let photoData;
-            
-            if (typeof ServerUtils !== 'undefined' && serverAvailable) {
-                try {
-                    photoData = await ServerUtils.uploadFile(photo, sectionId, subsectionId);
-                } catch (error) {
-                    console.error('Ошибка загрузки фото на сервер:', error);
-                    photoData = {
-                        url: URL.createObjectURL(photo),
-                        filename: photo.name,
-                        size: photo.size,
-                        type: photo.type
-                    };
-                }
-            } else {
-                photoData = {
-                    url: URL.createObjectURL(photo),
-                    filename: photo.name,
-                    size: photo.size,
-                    type: photo.type
-                };
-            }
-            
-            contentManager.addFile(photoData.filename, photoData.url, sectionId, subsectionId, photo.type);
-        }
-    }
-    
-    // Добавить активность
-    contentManager.addActivity(`Загружено фотографий: ${photos.length}`, '📷');
-    
-    closeModal('uploadPhotoModal');
-    photoInput.value = '';
-    document.getElementById('photoPreview').style.display = 'none';
-    document.getElementById('photoPreviewGrid').innerHTML = '';
-    alert('Фотографии успешно загружены');
-    
-    // Перезагрузить текущий раздел
-    showContent(sectionId, subsectionId);
-}
-
-// Предварительный просмотр фотографий
-function previewPhotos() {
-    const photoInput = document.getElementById('photoUpload');
-    const previewContainer = document.getElementById('photoPreview');
-    const previewGrid = document.getElementById('photoPreviewGrid');
-    
-    if (photoInput.files.length === 0) {
-        previewContainer.style.display = 'none';
-        return;
-    }
-    
-    previewContainer.style.display = 'block';
-    previewGrid.innerHTML = '';
-    
-    Array.from(photoInput.files).forEach((file, index) => {
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const previewItem = document.createElement('div');
-                previewItem.className = 'photo-preview-item';
-                previewItem.innerHTML = `
-                    <img src="${e.target.result}" alt="${file.name}">
-                    <div class="photo-name">${file.name}</div>
-                    <button class="remove-photo" onclick="removePhotoFromPreview(${index})">✕</button>
-                `;
-                previewGrid.appendChild(previewItem);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-}
-
-// Удаление фото из предварительного просмотра
-function removePhotoFromPreview(index) {
-    const photoInput = document.getElementById('photoUpload');
-    const dt = new DataTransfer();
-    
-    Array.from(photoInput.files).forEach((file, i) => {
-        if (i !== index) {
-            dt.items.add(file);
-        }
-    });
-    
-    photoInput.files = dt.files;
-    previewPhotos();
-}
-
-// Просмотр фото в полном размере
-function viewPhoto(url, title) {
-    const modal = document.createElement('div');
-    modal.className = 'photo-modal show';
-    modal.innerHTML = `
-        <div class="photo-modal-content">
-            <button class="photo-modal-close" onclick="this.parentElement.parentElement.remove()">✕</button>
-            <img src="${url}" alt="${title}">
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Закрытие по клику вне изображения
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.remove();
-        }
-    });
-}
-
-// Функция переключения развернутого/свернутого состояния контента
-function toggleContent(contentId, button) {
-    const contentElement = document.getElementById(contentId);
-    const isCollapsed = contentElement.classList.contains('collapsed');
-    
-    if (isCollapsed) {
-        contentElement.classList.remove('collapsed');
-        button.textContent = 'Свернуть';
-    } else {
-        contentElement.classList.add('collapsed');
-        button.textContent = 'Читать далее';
-    }
-}
-
-// Глобальная переменная для хранения текущего URL документа
-let currentGoogleDocUrl = '';
-
-// Функция открытия Google документа во встроенном просмотрщике
-function openGoogleDocEmbed(url, title) {
-    // Преобразовать URL для встраивания
-    let embedUrl = url;
-    
-    // Если это обычная ссылка на Google Docs, преобразуем её для встраивания
-    if (url.includes('docs.google.com/document/d/')) {
-        const docId = url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/);
-        if (docId) {
-            embedUrl = `https://docs.google.com/document/d/${docId[1]}/preview`;
-        }
-    } else if (url.includes('docs.google.com/spreadsheets/d/')) {
-        const docId = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-        if (docId) {
-            embedUrl = `https://docs.google.com/spreadsheets/d/${docId[1]}/preview`;
-        }
-    } else if (url.includes('docs.google.com/presentation/d/')) {
-        const docId = url.match(/\/presentation\/d\/([a-zA-Z0-9-_]+)/);
-        if (docId) {
-            embedUrl = `https://docs.google.com/presentation/d/${docId[1]}/preview`;
-        }
-    }
-    
-    // Сохранить оригинальный URL для кнопки "Открыть в новой вкладке"
-    currentGoogleDocUrl = url;
-    
-    // Установить заголовок и URL в iframe
-    document.getElementById('googleDocTitle').textContent = title;
-    document.getElementById('googleDocFrame').src = embedUrl;
-    
-    // Показать модальное окно
-    openModal('googleDocModal');
-}
-
-// Функция открытия документа в новой вкладке
-function openGoogleDocInNewTab() {
-    if (currentGoogleDocUrl) {
-        window.open(currentGoogleDocUrl, '_blank');
-    }
-}
-
-// Заполнение селектов разделов
-function fillSectionSelects(modalId) {
-    const sectionSelect = document.getElementById(modalId === 'addContentModal' ? 'contentSection' : 'docSection');
-    const subsectionSelect = document.getElementById(modalId === 'addContentModal' ? 'contentSubsection' : 'docSubsection');
-    
-    if (sectionSelect && subsectionSelect) {
-        sectionSelect.innerHTML = '<option value="">Выберите раздел</option>';
-        sectionManager.sections.forEach(section => {
-            sectionSelect.innerHTML += `<option value="${section.id}">${section.name}</option>`;
-        });
-        
-        sectionSelect.onchange = function() {
-            const selectedSectionId = this.value;
-            const selectedSection = sectionManager.sections.find(s => s.id === selectedSectionId);
-            
-            subsectionSelect.innerHTML = '<option value="">Выберите подраздел</option>';
-            if (selectedSection) {
-                selectedSection.subsections.forEach(subsection => {
-                    subsectionSelect.innerHTML += `<option value="${subsection.id}">${subsection.name}</option>`;
-                });
-            }
-        };
-        
-        // Очистить подразделы при загрузке
-        subsectionSelect.innerHTML = '<option value="">Сначала выберите раздел</option>';
-    }
-}
-
-// Настройка обработчиков форм
-function setupFormHandlers() {
-    // Обработчик добавления контента
-    const addContentForm = document.getElementById('addContentForm');
-    if (addContentForm) {
-        addContentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const sectionId = document.getElementById('contentSectionId').value;
-            const subsectionId = document.getElementById('contentSubsectionId').value;
-            const title = document.getElementById('contentTitle').value;
-            const description = document.getElementById('contentDescription').value;
-            
-            console.log('Добавление информации:', { sectionId, subsectionId, title, description });
-            
-            if (!sectionId || !subsectionId) {
-                alert('Ошибка: не указан раздел или подраздел');
-                return;
-            }
-            
-            if (!title.trim() || !description.trim()) {
-                alert('Заполните все поля');
-                return;
-            }
-            
-            contentManager.addContent(sectionId, subsectionId, title, description);
-            contentManager.addActivity(`Добавлена информация: ${title}`, '📝');
-            
-            closeModal('addContentModal');
-            addContentForm.reset();
-            
-            // Остаться в текущем разделе
-            showContent(sectionId, subsectionId);
-            
-            alert('Информация успешно добавлена!');
-        });
-    }
-    
-    // Обработчик добавления документа
-    const addDocForm = document.getElementById('addDocForm');
-    if (addDocForm) {
-        addDocForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const sectionId = document.getElementById('docSectionId').value;
-            const subsectionId = document.getElementById('docSubsectionId').value;
-            const title = document.getElementById('docTitle').value;
-            const url = document.getElementById('docUrl').value;
-            
-            if (!sectionId || !subsectionId) {
-                alert('Ошибка: не указан раздел или подраздел');
-                return;
-            }
-            
-            contentManager.addGoogleDoc(title, url, sectionId, subsectionId);
-            contentManager.addActivity(`Добавлен документ: ${title}`, '📄');
-            
-            closeModal('addDocModal');
-            addDocForm.reset();
-            
-            // Остаться в текущем разделе
-            showContent(sectionId, subsectionId);
-        });
-    }
-    
-    // Обработчик редактирования контента
-    const editContentForm = document.getElementById('editContentForm');
-    if (editContentForm) {
-        editContentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const key = document.getElementById('editContentKey').value;
-            const id = parseInt(document.getElementById('editContentId').value);
-            const title = document.getElementById('editContentTitle').value;
-            const description = document.getElementById('editContentDescription').value;
-            
-            if (!title.trim() || !description.trim()) {
-                alert('Заполните все поля');
-                return;
-            }
-            
-            if (updateContentFromMenu(key, id, title, description)) {
-                alert('Информация успешно обновлена');
-                closeModal('editContentModal');
-                
-                // Перезагрузить текущий раздел
-                const parts = key.split('_');
-                if (parts.length === 2) {
-                    showContent(parts[0], parts[1]);
-                }
-            } else {
-                alert('Ошибка при обновлении информации');
-            }
-        });
-    }
-    
-    // Обработчик предварительного просмотра фото
-    const photoInput = document.getElementById('photoUpload');
-    if (photoInput) {
-        photoInput.addEventListener('change', previewPhotos);
-    }
-}
-
-// Обновление последних активностей
-function updateRecentActivity() {
-    const activities = contentManager.getActivities();
-    const activityContainer = document.getElementById('recent-activity');
-    
-    if (!activityContainer) return;
-    
-    let html = '';
-    activities.forEach(activity => {
-        html += `
-            <div class="activity-item">
-                <div class="activity-icon">${activity.icon}</div>
-                <div class="activity-info">
-                    <p>${activity.title}</p>
-                    <small>${activity.date}</small>
-                </div>
-                ${auth.isAdmin() ? `<button class="btn-danger" onclick="deleteActivity(${activity.id})" style="margin-left: auto; padding: 5px 10px; font-size: 12px;">Удалить</button>` : ''}
-            </div>
-        `;
-    });
-    
-    if (activities.length === 0) {
-        html = '<p>Нет последних обновлений</p>';
-    }
-    
-    activityContainer.innerHTML = html;
-}
-
-// Функция удаления активности (только для админов)
-function deleteActivity(id) {
-    if (!auth.isAdmin()) return;
-    
-    if (confirm('Вы уверены, что хотите удалить это обновление?')) {
-        let activities = JSON.parse(localStorage.getItem('uptaxi_activities')) || [];
-        activities = activities.filter(activity => activity.id !== id);
-        localStorage.setItem('uptaxi_activities', JSON.stringify(activities));
-        contentManager.activities = activities;
-        updateRecentActivity();
-    }
+  const modal = document.getElementById(modalId)
+  if (modal) {
+    modal.classList.remove("show")
+  }
 }
 
 // Инициализация при загрузке страницы
-document.addEventListener('DOMContentLoaded', function() {
-    if (checkAuth()) {
-        const user = auth.currentUser;
-        
-        // Загрузить динамические разделы
-        loadDynamicSections();
-        
-        document.getElementById('currentUser').textContent = user.username;
-        document.getElementById('userInitials').textContent = user.username.charAt(0).toUpperCase();
-        
-        // Показать админ-панель только для администраторов
-        if (auth.isAdmin()) {
-            document.querySelectorAll('.admin-only').forEach(element => {
-                element.style.display = 'block';
-            });
-        }
-        
-        // Загрузить последние активности
-        updateRecentActivity();
-        
-        // Настроить обработчики форм
-        setupFormHandlers();
-        
-        // Слушать обновления разделов
-        window.addEventListener('sectionsUpdated', function() {
-            loadDynamicSections();
-            updateRecentActivity();
-        });
-        
-        // Обновлять разделы при изменении localStorage
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'uptaxi_sections') {
-                loadDynamicSections();
-            }
-        });
-    }
-});
+document.addEventListener("DOMContentLoaded", async () => {
+  // Проверить авторизацию
+  if (!auth.isLoggedIn()) {
+    window.location.href = "index.html"
+    return
+  }
+
+  // Инициализировать менеджер меню
+  menuManager = new MenuManager()
+  menuManager.currentUser = auth.getCurrentUser()
+
+  // Обновить информацию о пользователе
+  const user = auth.getCurrentUser()
+  document.getElementById("currentUser").textContent = user.username
+  document.getElementById("userInitials").textContent = user.username.charAt(0).toUpperCase()
+  document.getElementById("userRole").textContent = user.role === "admin" ? "Администратор" : "Пользователь"
+
+  // Слушать обновления разделов
+  window.addEventListener("sectionsUpdated", () => {
+    menuManager.loadData()
+  })
+})

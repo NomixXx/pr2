@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест доступа - UpTaxi Portal</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ffe600 0%, #ffaf03 50%, #fdec01 100%);
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        .ip-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚕 UpTaxi Portal - Тест доступа</h1>
+        
+        <div class="status success">
+            ✅ Веб-сервер работает корректно!
+        </div>
+        
+        <div class="ip-info">
+            <h3>Информация о подключении:</h3>
+            <p><strong>Ваш IP:</strong> <span id="clientIP">Загрузка...</span></p>
+            <p><strong>Сервер:</strong> <span id="serverInfo">Загрузка...</span></p>
+            <p><strong>Время:</strong> <span id="currentTime"></span></p>
+        </div>
+        
+        <div class="status info">
+            <h3>Ссылки для доступа:</h3>
+            <p><strong>Основной портал:</strong> <a href="index.html">index.html</a></p>
+            <p><strong>Меню:</strong> <a href="menu.html">menu.html</a></p>
+            <p><strong>Админ-панель:</strong> <a href="admin.html">admin.html</a></p>
+        </div>
+        
+        <div class="status warning">
+            <h3>Тестирование функций:</h3>
+            <button onclick="testAPI()">Тест API</button>
+            <button onclick="testDatabase()">Тест БД</button>
+            <button onclick="testUpload()">Тест загрузки</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="status info">
+            <h3>Логины по умолчанию:</h3>
+            <p><strong>Администратор:</strong> admin / admin123</p>
+            <p><strong>Пользователь:</strong> user / user123</p>
+        </div>
+    </div>
+
+    <script>
+        // Получить информацию о клиенте
+        document.getElementById('currentTime').textContent = new Date().toLocaleString('ru-RU');
+        
+        // Получить IP клиента
+        fetch('https://api.ipify.org?format=json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('clientIP').textContent = data.ip;
+            })
+            .catch(() => {
+                document.getElementById('clientIP').textContent = 'Не удалось определить';
+            });
+        
+        // Информация о сервере
+        document.getElementById('serverInfo').textContent = window.location.host;
+        
+        // Тестирование функций
+        function testAPI() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p>Тестирование API...</p>';
+            
+            fetch('/api/config.php')
+                .then(response => {
+                    if (response.ok) {
+                        results.innerHTML = '<p style="color: green;">✅ API доступно</p>';
+                    } else {
+                        results.innerHTML = '<p style="color: orange;">⚠️ API недоступно</p>';
+                    }
+                })
+                .catch(() => {
+                    results.innerHTML = '<p style="color: red;">❌ Ошибка подключения к API</p>';
+                });
+        }
+        
+        function testDatabase() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p>Тестирование базы данных...</p>';
+            
+            fetch('/api/auth.php/test', { method: 'GET' })
+                .then(response => {
+                    if (response.ok) {
+                        results.innerHTML = '<p style="color: green;">✅ База данных доступна</p>';
+                    } else {
+                        results.innerHTML = '<p style="color: orange;">⚠️ База данных недоступна</p>';
+                    }
+                })
+                .catch(() => {
+                    results.innerHTML = '<p style="color: red;">❌ Ошибка подключения к БД</p>';
+                });
+        }
+        
+        function testUpload() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p>Проверка директории загрузок...</p>';
+            
+            fetch('/uploads/')
+                .then(response => {
+                    if (response.status === 403 || response.status === 200) {
+                        results.innerHTML = '<p style="color: green;">✅ Директория загрузок доступна</p>';
+                    } else {
+                        results.innerHTML = '<p style="color: orange;">⚠️ Проблемы с директорией загрузок</p>';
+                    }
+                })
+                .catch(() => {
+                    results.innerHTML = '<p style="color: red;">❌ Директория загрузок недоступна</p>';
+                });
+        }
+    </script>
+</body>
+</html>
